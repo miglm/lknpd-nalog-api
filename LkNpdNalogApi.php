@@ -79,8 +79,8 @@ class LkNpdNalogApi
      */
     private function _getUtcTime(): string
     {
-        $datetime = new DateTime('now');
-        $datetime->setTimeZone(new DateTimeZone($this->timezone));
+        $datetime = new \DateTime('now');
+        $datetime->setTimeZone(new \DateTimeZone($this->timezone));
         $utcTime = $datetime->format('c');
         $this->utcTime = $utcTime;
 
@@ -93,35 +93,47 @@ class LkNpdNalogApi
         $this->errorExceptionMessage = $exception;
     }
 
+    private function _parseService($service) {
+        return [
+            'name' => $service->name,
+            'amount' => floatval($service->amount),
+            // Насколько мне известно, у НПД не может быть дробного количесва
+            'quantity' => isset($service->quantity) ? intval($service->quantity) : 1
+        ];
+    }
+
     /**
      * @param $args
      * @throws HttpException
      */
-    public function createReceipt($args){
+    public function createReceipt($args) {
         $this->makeAuth();
 
         $args = (object) $args;
 
-        if (!$this->error){
+        if (!$this->error) {
+            $services = [];
+            if (isset($args->services)) {
+                foreach ($args->services as $service) {
+                    $services[] = $this->_parseService((object) $service);
+                }
+            } else {
+                $services[] = $this->_parseService($args);
+            }
+
             $payload = [
                 'operationTime' => $this->_getUtcTime(),
                 'requestTime' => $this->_getUtcTime(),
-                'services' => [
-                    [
-                        'name' => $args->name,
-                        'amount' => $args->amount,
-                        'quantity' => 1,
-                    ]
-                ],
+                'services' => $services,
                 'totalAmount' => $args->amount,
                 'client' => [
-                    'contactPhone' => $args->clientContactPhone || null,
-                    'displayName' => $args->clientDisplayName || null,
+                    'contactPhone' => isset($args->clientContactPhone) ? $args->clientContactPhone : null,
+                    'displayName' => isset($args->clientDisplayName) ? $args->clientDisplayName : null,
                     'inn' => null,
                     'incomeType' => 'FROM_INDIVIDUAL'
                 ],
                 'paymentType' => 'CASH',
-                'ignoreMaxTotalIncomeRestriction' => false,
+                'ignoreMaxTotalIncomeRestriction' => false
             ];
 
             $this->_makeQuery('createReceipt', $payload);
@@ -264,10 +276,8 @@ class LkNpdNalogApi
             curl_close($curl);
 
             return $out;
-        }else {
+        } else {
             throw new HttpException('Can not create connection to ' . $api_url . ' with args ' . $args, 404);
         }
-
-
     }
 }

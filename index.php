@@ -3,8 +3,8 @@
 spl_autoload('LkNpdNalogApi');
 
 $api = new LkNpdNalogApi(
-    'Логин для ЛК ФНС (обязательно)',
-    'Пароль для ЛК ФНС (обязательно)',
+    'Логин для ЛК НПД ФНС (обычно ИНН, обязательно)',
+    'Пароль для ЛК НПД ФНС (обязательно)',
     'Asia/Yekaterinburg' // Часовой пояс (необязательно, нужен для верного отображения времени в чеке). По умолчанию - Europe/Moscow
 );
 
@@ -19,6 +19,15 @@ $args = [
     'amount' => 149,
     'clientContactPhone' => null,
     'clientDisplayName' => null
+];
+
+// То же самое
+$args = [
+    'services' => [
+        'name' => 'Название товара 1',
+        'amount' => 149
+    ],
+    'amount' => 149
 ];
 
 $api->createReceipt($args);

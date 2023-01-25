@@ -1,23 +1,32 @@
 # lknpd-nalog-api
+
 Небольшая PHP-библиотека для формирования и отмены чеков для самозанятых (пользователей "Мой налог")
 
 ## Методы
+
 ### Подключение библиотеки
+
 ```php
 spl_autoload('LkNpdNalogApi');
 
 $api = new LkNpdNalogApi(
-    'Логин для ЛК ФНС (обязательно)',
-    'Пароль для ЛК ФНС (обязательно)',
-        'Asia/Yekaterinburg' // Часовой пояс (необязательно, нужен для верного отображения времени в чеке). По умолчанию - Europe/Moscow
+    'Логин для ЛК НПД ФНС (обычно ИНН, обязательно)',
+    'Пароль для ЛК НПД ФНС (обязательно)',
+    'Asia/Yekaterinburg' // Часовой пояс (необязательно, нужен для верного отображения времени в чеке). По умолчанию - Europe/Moscow
 );
 ```
 
 ### Создание нового чека
+
+Для одной позиции:
+
 ```php
 $args = [
-    'name' => 'Название товара',
+    'name' => 'Наименование товара',
+    // Кол-во целых единиц товара (в шт., по-умолчанию - 1)
+    'quantity' => 1,
     'amount' => 149,
+    // Необязательные поля
     'clientContactPhone' => null,
     'clientDisplayName' => null
 ];
@@ -25,13 +34,35 @@ $args = [
 $api->createReceipt($args);
 ```
 
-### Отмена ранее выданного чека
+Для нескольких позиций:
+
 ```php
 $args = [
-    'reason' => 'CANCEL',
-        // СANCEL - Чек сформирован ошибочно
-        // REFUND - Возврат средств
-    'receiptUuid' => '20aabbccdd' // ID чека
+    'services' => [
+        [
+            'name' => 'Наименование товара 1',
+            // Кол-во целых единиц товара (в шт., по-умолчанию - 1)
+            'quantity' => 1,
+            'amount' => 149
+        ],
+        // ...
+    ],
+    // Общая сумма в чеке
+    'amount' => 149
+];
+
+$api->createReceipt($args);
+```
+
+### Отмена ранее выданного чека
+
+```php
+$args = [
+    // ID чека
+    'receiptUuid' => '20aabbccdd',
+    // СANCEL - Чек сформирован ошибочно
+    // REFUND - Возврат средств
+    'reason' => 'CANCEL'
 ];
 
 $api->cancelReceipt($args);
@@ -79,11 +110,12 @@ echo $api->response;
 ```
 
 ### Валидация
+
 ```php
-if (!$api->error){
+if (!$api->error) {
     // Все в порядке
     echo "receiptUuid: {$api->receiptUuid}<br>";
-}else{
+} else {
     // Ошибка
     echo "errorMessage: {$api->errorMessage}<br>";
     echo "errorExceptionMessage: {$api->errorExceptionMessage}<br>";
@@ -91,4 +123,5 @@ if (!$api->error){
 ```
 
 ### Пример использования
-Примеры использования приведены в `index.php`
+
+Примеры использования приведены в `index.php`.
